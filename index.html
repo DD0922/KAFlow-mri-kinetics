@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#ffffff">
   <meta name="robots" content="noindex, nofollow, noarchive">
-  <meta name="description" content="Private project page for Latent Velocity-Field Modeling for MRI Contrast Enhancement Kinetics World Model.">
-  <title>Latent Velocity-Field Modeling for MRI Contrast Enhancement Kinetics World Model</title>
+  <meta name="description" content="Kolmogorov-Arnold Flow Learning for MRI Contrast Enhancement Kinetics World Model.">
+  <title>Kolmogorov-Arnold Flow Learning for MRI Contrast Enhancement Kinetics World Model</title>
   <link rel="stylesheet" href="styles-scrub10.css?v=be20491">
 </head>
 <body>
   <main>
     <header class="paper-header">
-      <h1><span>Latent Velocity-Field Modeling</span> for MRI Contrast Enhancement Kinetics World Model</h1>
+      <h1><span>Kolmogorov-Arnold Flow Learning</span> for MRI Contrast Enhancement Kinetics World Model</h1>
       <p class="authors">Jindi Kong<sup>1</sup>, Yuting He<sup>1</sup>, Cong Xia<sup>2</sup> and Shuo Li<sup>1,*</sup></p>
       <div class="affiliations">
         <p><sup>1</sup> Case Western Reserve University, Cleveland, OH, USA</p>
@@ -22,21 +22,21 @@
     </header>
 
     <section class="comparison-section" aria-labelledby="comparison-title">
-      <h2 id="comparison-title">Limitation: Local Smoothness, But Fragmented Kinetics</h2>
+      <h2 id="comparison-title">Limitation: Local regularization leads to fragmented kinetics</h2>
       <div class="heading-rule" aria-hidden="true"></div>
-      <video class="comparison-video" controls autoplay muted loop playsinline preload="auto" aria-label="Limitation: local smoothness and fragmented kinetics">
+      <video class="comparison-video" controls autoplay muted loop playsinline preload="auto" aria-label="Limitation: local regularization leads to fragmented kinetics">
         <source src="assets/limitation-20261018.mp4" type="video/mp4">
         Your browser does not support MP4 playback.
       </video>
-      <p class="comparison-text">Previous methods, including the current state-of-the-art <a href="https://github.com/DD0922/MRI-Contrast-Enhancement-Kinetics-World-Model" target="_blank" rel="noopener noreferrer">MRI CEKWorld</a>, which employs Spatiotemporal Consistency Learning (STCL), use smoothness regularization but still struggle with <strong><em>fragmented kinetics</em></strong>. They impose constraints on predicted states or their temporal differences at discrete observed time points to promote temporal smoothness. However, these constraints regularize changes between neighboring time points without explicitly linking enhancement dynamics across different temporal intervals. Thus, the predictions remain locally smooth but exhibit incoherent transitions between intervals, resulting in fragmented kinetics, such as abrupt intensity changes across temporal intervals.</p>
+      <p class="comparison-text">Previous methods, including the current state-of-the-art <a href="https://github.com/DD0922/MRI-Contrast-Enhancement-Kinetics-World-Model" target="_blank" rel="noopener noreferrer">MRI CEKWorld</a>, which employs Spatiotemporal Consistency Learning (STCL), utilize smoothness regularization but still struggle with <strong><em>fragmented kinetics</em></strong>. They impose constraints on predicted states or their temporal differences at discrete observed time points to promote temporal continuity. However, these constraints regularize local changes between neighboring time points without explicitly linking enhancement dynamics across different temporal intervals. Thus, the predictions remain locally continuous but exhibit incoherent transitions between intervals, resulting in fragmented kinetics, such as abrupt intensity changes across temporal intervals.</p>
     </section>
 
     <section class="ideas-section" aria-labelledby="ideas-title">
-      <h2 id="ideas-title">Motivation：Modeling a shared velocity field over time</h2>
+      <h2 id="ideas-title">Motivation: Continuous-time flow links kinetics for global continuity</h2>
       <div class="heading-rule" aria-hidden="true"></div>
-      <p class="motivation"><em>Motivation</em>: Modeling a shared latent velocity field over time is essential to promote globally coherent contrast enhancement kinetics by linking state evolution across temporal intervals. Sparse observed state changes constrain the accumulated latent velocities within temporal intervals. By jointly constraining the same velocity function across different intervals, sparse observations provide not only supervision of discrete states but also constraints on the underlying latent kinetics within unobserved intervals, thereby promoting coherent enhancement evolution over time.</p>
+      <p class="motivation"><em>Motivation</em>: A continuous-time flow links evolution over time, promoting globally continuous contrast-enhancement kinetics. Ideally, a continuous-time flow connects enhancement states at different time points, allowing temporal intervals to follow a unified continuous evolution process. By constraining enhancement predictions through this flow, the model establishes a unified dynamical relationship across temporal intervals, thereby promoting globally continuous enhancement kinetics.</p>
       <figure class="figure-one">
-        <img src="assets/motivation.png" alt="A shared velocity field links enhancement dynamics over time to promote globally coherent kinetics" loading="lazy">
+        <img src="assets/limitation-motivation-1102.png" alt="Local regularization leads to fragmented kinetics, while a continuous-time flow links kinetics for global continuity" loading="lazy">
       </figure>
     </section>
 
