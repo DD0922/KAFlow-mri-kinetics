@@ -53,7 +53,7 @@ section h2 { margin: 0; text-align: center; font-size: clamp(1.55rem, 2.5vw, 2.1
 
 .ideas-section { padding-bottom: 105px; }
 .motivation { max-width: 1010px; margin: 0 auto 39px; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(1.05rem, 1.55vw, 1.25rem); line-height: 1.8; }
-.figure-one { margin: 0; }
+.figure-one { max-width: 1010px; margin: 0 auto; }
 .figure-one img { display: block; width: 100%; height: auto; border: 1px solid #eceef1; }
 .figure-one figcaption { margin-top: 11px; text-align: center; color: var(--muted); font-size: .85rem; }
 
