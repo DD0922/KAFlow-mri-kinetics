@@ -51,10 +51,10 @@ section h2 { margin: 0; text-align: center; font-size: clamp(1.55rem, 2.5vw, 2.1
 .seek-thumb { position: absolute; left: var(--progress, 0%); top: 8px; width: 16px; height: 16px; transform: translateX(-50%); border-radius: 50%; background: #fff; border: 3px solid var(--accent); box-shadow: 0 1px 4px #0003; pointer-events: none; }
 .case-note { margin: 0; padding: 0 28px 21px; color: var(--muted); font-size: .85rem; text-align: center; }
 
-.ideas-section { padding-bottom: 105px; }
-.motivation { max-width: 1010px; margin: 0 auto 39px; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(1.05rem, 1.55vw, 1.25rem); line-height: 1.8; }
-.figure-one { max-width: 1010px; margin: 0 auto; }
-.figure-one img { display: block; width: 100%; height: auto; border: 1px solid #eceef1; }
+.ideas-section, .method-section { padding-bottom: 105px; }
+.motivation, .method-text { max-width: 1010px; margin: 0 auto 39px; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(1.05rem, 1.55vw, 1.25rem); line-height: 1.8; }
+.figure-one, .method-figure { max-width: 1010px; margin: 0 auto; }
+.figure-one img, .method-figure img { display: block; width: 100%; height: auto; border: 1px solid #eceef1; }
 .figure-one figcaption { margin-top: 11px; text-align: center; color: var(--muted); font-size: .85rem; }
 
 @media (max-width: 700px) {
@@ -67,5 +67,5 @@ section h2 { margin: 0; text-align: center; font-size: clamp(1.55rem, 2.5vw, 2.1
   .video-controls { gap: 8px; }
   .time-label { font-size: .71rem; min-width: 31px; }
   .case-note { padding: 3px 15px 18px; }
-  .motivation { line-height: 1.65; }
+  .motivation, .method-text { line-height: 1.65; }
 }

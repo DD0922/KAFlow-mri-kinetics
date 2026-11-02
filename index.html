@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex, nofollow, noarchive">
   <meta name="description" content="Kolmogorov-Arnold Flow Learning for MRI Contrast Enhancement Kinetics World Model.">
   <title>Kolmogorov-Arnold Flow Learning for MRI Contrast Enhancement Kinetics World Model</title>
-  <link rel="stylesheet" href="styles-scrub10.css?v=figure-width-1010">
+  <link rel="stylesheet" href="styles-scrub10.css?v=method-1102">
 </head>
 <body>
   <main>
@@ -37,6 +37,15 @@
       <p class="motivation"><em>Motivation</em>: A continuous-time flow links evolution over time, promoting globally continuous contrast-enhancement kinetics. Ideally, a continuous-time flow connects enhancement states at different time points, allowing temporal intervals to follow a unified continuous evolution process. By constraining enhancement predictions through this flow, the model establishes a unified dynamical relationship across temporal intervals, thereby promoting globally continuous enhancement kinetics.</p>
       <figure class="figure-one">
         <img src="assets/limitation-motivation-1102.png" alt="Local regularization leads to fragmented kinetics, while a continuous-time flow links kinetics for global continuity" loading="lazy">
+      </figure>
+    </section>
+
+    <section class="method-section" aria-labelledby="method-title">
+      <h2 id="method-title">KAFlow Learning</h2>
+      <div class="heading-rule" aria-hidden="true"></div>
+      <p class="method-text">Our proposed Kolmogorov-Arnold Flow Learning (KAFlow) is integrated into a conditional diffusion model to promote globally continuous contrast-enhancement kinetics. Specifically, Flow Consistency Regression (FlowCR) establishes an outer continuous-time flow learning mechanism that learns a shared latent vector field through integral endpoint consistency under sparse observations, jointly optimizing the vector field and denoising network. Within this mechanism, the Latent Kinetic Kolmogorov-Arnold Network (LatentKAN) parameterizes the shared vector field using locally supported B-splines to capture locally varying enhancement kinetics. Together, FlowCR and LatentKAN enable KAFlow to regularize diffusion training toward coherent contrast-enhanced sequences from non-contrast MRI.</p>
+      <figure class="method-figure">
+        <img src="assets/kaflow-method-1102.png" alt="KAFlow method diagram showing Flow Consistency Regression and the Latent Kinetic Kolmogorov-Arnold Network" loading="lazy">
       </figure>
     </section>
 
