@@ -23,6 +23,14 @@ sup { font-size: .7em; vertical-align: super; }
 .paper-link { display: inline-flex; gap: 10px; align-items: center; justify-content: center; padding: 10px 22px; border-radius: 999px; color: #fff; background: #b8242d; font-size: .94rem; font-weight: 650; text-decoration: none; box-shadow: 0 4px 11px #b8242d21; }
 .paper-link:hover { background: #9d1d25; }
 .paper-link:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid #548fcf; outline-offset: 3px; }
+.codes-page { max-width: 1120px; margin: 0 auto; padding: 55px 28px 90px; }
+.codes-page h1 { margin: 20px 0 30px; font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -0.035em; }
+.codes-back-link { color: #626878; text-decoration: none; }
+.codes-back-link:hover { color: var(--accent); text-decoration: underline; }
+.core-codes-panel { max-width: 1010px; padding: 24px; border: 1px solid var(--line); border-radius: 14px; background: #fafbfc; text-align: left; }
+.core-codes-panel h2 { margin: 0 0 12px; font-size: 1.05rem; line-height: 1.4; }
+.core-codes-panel h2:not(:first-child) { margin-top: 32px; }
+.core-codes-panel pre { max-height: 580px; margin: 0; padding: 18px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: #253044; font: .82rem/1.6 Consolas, 'Courier New', monospace; text-align: left; tab-size: 4; }
 
 section { max-width: 1180px; margin: 0 auto; padding: 0 28px 80px; }
 section h2 { margin: 0; text-align: center; font-size: clamp(1.55rem, 2.5vw, 2.1rem); letter-spacing: -0.025em; }
@@ -68,4 +76,7 @@ section h2 { margin: 0; text-align: center; font-size: clamp(1.55rem, 2.5vw, 2.1
   .time-label { font-size: .71rem; min-width: 31px; }
   .case-note { padding: 3px 15px 18px; }
   .motivation, .method-text { line-height: 1.65; }
+  .core-codes-panel { padding: 14px; }
+  .core-codes-panel pre { padding: 12px; font-size: .75rem; }
+  .codes-page { padding: 32px 17px 65px; }
 }

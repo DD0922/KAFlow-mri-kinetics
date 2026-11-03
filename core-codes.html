@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <title>Core Codes | KAFlow</title>
+  <link rel="stylesheet" href="styles-scrub10.css?v=core-codes-page-1103">
+</head>
+<body>
+  <main class="codes-page">
+    <a class="codes-back-link" href="./">← Back</a>
+    <h1>Core Codes</h1>
+    <div class="core-codes-panel">
+      <h2>3.1 LatentKAN Vector-Field Parameterization</h2>
+      <pre><code>    def __init__(self, n_state, hidden_dim, output_dim, grid_size=5, spline_order=3, init_scale=0.30, debug=False, time_scale_factor=300.0):
+        super().__init__()
+        self.init_scale = init_scale
+        self.debug = debug
+
+        try:
+            from efficient_kan import KAN as EfficientKAN
+            self.kan = EfficientKAN([n_state, hidden_dim, output_dim], grid_size=grid_size, spline_order=spline_order)
+            print(f&#x27;[KANDynamics] Using efficient-kan&#x27;)
+            print(f&#x27;  Input dim: {n_state}, Hidden dim: {hidden_dim}, Output dim: {output_dim}&#x27;)
+        except ImportError:
+            try:
+                from kan import KAN as PyKAN
+                self.kan = PyKAN(width=[n_state, hidden_dim, output_dim], grid=grid_size, k=spline_order)
+                print(f&#x27;[KANDynamics] Using pykan for latent vector-field parameterization&#x27;)
+                print(f&#x27;  Input dim: {n_state}, Hidden dim: {hidden_dim}, Output dim: {output_dim}&#x27;)
+            except ImportError:
+                raise ImportError(&#x27;Neither efficient-kan nor pykan is installed.&#x27;)
+
+        # Apply non-zero initialization to obtain meaningful initial vector-field values.
+        self._init_weights()
+        print(f&#x27;  ⚠️ Applied initialization (scale={init_scale}) for physically reasonable du/dt magnitude&#x27;)
+
+        # Store the physical time scale used by the original implementation.
+        self.output_scale = time_scale_factor
+        print(f&#x27;  ⚠️ Applied time scale factor: {time_scale_factor} (to compensate for time normalization)&#x27;)
+
+    def _init_weights(self):
+        &quot;&quot;&quot;Initialize the LatentKAN vector-field parameters with non-zero values.&quot;&quot;&quot;
+        for name, param in self.kan.named_parameters():
+            if param.requires_grad:
+                # Use a wider uniform initialization to avoid near-zero vector-field values.
+                param.data.uniform_(-self.init_scale * 3, self.init_scale * 3)
+        print(f&#x27;  ⚠️ Increased initialization scale to {self.init_scale * 3:.2f} for reasonable initial du/dt magnitude&#x27;)
+
+    def forward(self, u):
+        &quot;&quot;&quot;
+        Args:
+            u: Current state with shape [..., n_state].
+        Returns:
+            Value of the latent vector field with shape [..., output_dim].
+        &quot;&quot;&quot;
+        original_shape = u.shape
+        # Flatten all leading dimensions.
+        u_flat = u.reshape(-1, original_shape[-1])  # [N, n_state]
+
+        # Evaluate the KAN-parameterized local latent vector field.
+        du_dt_raw = self.kan(u_flat)  # [N, output_dim]
+
+        # Use the raw KAN output without additional scaling.
+        du_dt_flat = du_dt_raw
+
+        # Restore the original leading dimensions.
+        du_dt = du_dt_flat.reshape(*original_shape[:-1], -1)  # [..., output_dim]
+        return du_dt</code></pre>
+      <h2>3.2 Spatiotemporal Inputs and Vector-Field Parameterizer Selection</h2>
+      <pre><code>    def __init__(self, n_state=1, use_kan=True, hidden_dim=16, grid_size=5, spline_order=3,
+                 use_rk4: bool = False, time_encoding: str = &#x27;raw&#x27;, time_dim: int = 64,
+                 rk4_num_steps: int = 1, debug: bool = False, time_scale_factor: float = 300.0,
+                 max_slices: int = 64, spatial_freqs: int = 4, **kwargs):
+        super().__init__()
+        self.n_state = n_state
+        self.debug = debug
+        self.rk4_num_steps = rk4_num_steps  # Number of substeps per interval (default: one RK4 step)
+        self.max_slices = max_slices  # Maximum number of slices used for normalization
+        self.spatial_freqs = 1  # Number of spatial Fourier-frequency bands
+
+        # Time encoder: &#x27;raw&#x27; uses time directly; &#x27;sincos&#x27; uses sinusoidal encoding.
+        if time_encoding == &#x27;raw&#x27;:
+            self.time_encoder = RawTimeEncoding()
+            self.time_dim = 1
+        else:  # &#x27;sincos&#x27;
+            self.time_encoder = TemporalEncoding(dim=time_dim)
+            self.time_dim = time_dim
+
+        # Shared latent vector-field parameterizer: KAN or MLP
+        # (input dimension = state + time + spatial Fourier features).
+        # Include spatial and slice information: x, y, and the slice index with Fourier encoding.
+        if self.spatial_freqs &gt; 0:
+            self.spatial_dim = 3 + 3 * 2 * self.spatial_freqs
+        else:
+            self.spatial_dim = 3
+        input_dim = n_state + self.time_dim + self.spatial_dim
+        output_dim = n_state
+        if use_kan:
+            self.dynamics = KANDynamics(input_dim, hidden_dim, output_dim, grid_size, spline_order,
+                                       debug=debug, time_scale_factor=time_scale_factor)
+        else:
+            self.dynamics = MLPDynamics(input_dim, hidden_dim, output_dim)
+
+        # Select the numerical integrator used to induce the flow map.
+        self.use_rk4 = use_rk4</code></pre>
+      <h2>3.3 Shared Latent Vector Field and RK4 Flow-Map Integration</h2>
+      <pre><code>    def f(u, t):
+        &quot;&quot;&quot;Shared latent vector field: f_theta(u, t, x, y, slice).&quot;&quot;&quot;
+        # Encode time.
+        t_enc = dynamics_module.time_encoder(t)  # [B, time_dim]
+        t_enc_exp = t_enc.view(B, 1, 1, -1).expand(B, H, W, -1)  # [B, H, W, time_dim]
+
+        # Concatenate the state, time encoding, and spatial encoding.
+        u_input = u.permute(0, 2, 3, 1)  # [B, H, W, C]
+        u_with_time_space = torch.cat([u_input, t_enc_exp, spatial_enc], dim=-1)  # [B, H, W, C+time_dim+3]
+
+        if debug:
+            print(f&quot;  [f] t_enc stats: min={t_enc.min():.6f}, max={t_enc.max():.6f}, mean={t_enc.mean():.6f}&quot;)
+            print(f&quot;  [f] u_input stats: min={u_input.min():.6f}, max={u_input.max():.6f}, mean={u_input.mean():.6f}&quot;)
+
+        # Evaluate the shared LatentKAN vector field at the current state, time, and spatial position.
+        du_dt = dynamics_module.dynamics(u_with_time_space)  # [B, H, W, C]
+
+        if debug:
+            print(f&quot;  [f] du_dt stats: min={du_dt.min():.6f}, max={du_dt.max():.6f}, mean={du_dt.mean():.6f}&quot;)
+            print(f&quot;  [f] du_dt magnitude: {du_dt.abs().mean():.6f}&quot;)
+
+        du_dt = du_dt.permute(0, 3, 1, 2).contiguous()  # [B, C, H, W]
+        return du_dt
+
+    # Define the source state of each temporal flow map: the non-contrast hint
+    # for the first interval and the preceding x0 prediction for later intervals.
+    u_current = u0
+    t_prev = torch.zeros_like(t_span[:, 0])  # Initial time: t = 0
+
+    for i in range(T):
+        if i &gt; 0:
+            u_current = x0_pred_seq[:, i - 1]
+            t_prev = t_span[:, i - 1]
+
+        # Integrate the shared vector field over the current temporal interval.
+        t_target = t_span[:, i]
+        dt_total = t_target - t_prev  # Time interval
+
+        # Divide the interval into num_steps substeps.
+        dt_small = dt_total / num_steps
+        dt_small_expanded = dt_small.view(B, 1, 1, 1)
+
+        # Use multi-step RK4 integration to obtain the flow-predicted endpoint.
+        t_current = t_prev
+        for step in range(num_steps):
+            # One standard RK4 step.
+            k1 = f(u_current, t_current)
+
+            t_mid = t_current + 0.5 * dt_small
+            k2 = f(u_current + 0.5 * dt_small_expanded * k1, t_mid)
+            k3 = f(u_current + 0.5 * dt_small_expanded * k2, t_mid)
+
+            t_next = t_current + dt_small
+            k4 = f(u_current + dt_small_expanded * k3, t_next)
+
+            # Update the state along the flow map.
+            increment = (k1 + 2.0 * k2 + 2.0 * k3 + k4) / 6.0
+            u_current = u_current + dt_small_expanded * increment
+            t_current = t_next</code></pre>
+      <h2>3.4 Flow Consistency Regression in Diffusion Training</h2>
+      <pre><code>        if self.training and self.dynamics_module is not None:
+            if self.parameterization == &quot;eps&quot;:
+                x0_pred = self.predict_start_from_noise(x_noisy, t, model_output)
+            elif self.parameterization == &quot;x0&quot;:
+                x0_pred = model_output
+            elif self.parameterization == &quot;v&quot;:
+                x0_pred = self.predict_start_from_z_and_v(x_noisy, t, model_output)
+            else:
+                x0_pred = None
+
+            z_hint = cond.get(&quot;dynamics_hint&quot;) if isinstance(cond, dict) else None
+            delta_t = self.get_delta_t(cond)
+            slice_idx = cond.get(&quot;slice&quot;) if isinstance(cond, dict) else None
+
+            if x0_pred is not None and z_hint is not None and delta_t is not None:
+                is_temporal_batch = delta_t.ndim == 1 and delta_t.shape[0] == x_start.shape[0]
+                if is_temporal_batch:
+                    x0_pred_seq, x_start_seq = x0_pred, x_start
+                    z_hint_seq, delta_t_seq = z_hint, delta_t
+                else:
+                    x0_pred_seq, x_start_seq = x0_pred.unsqueeze(1), x_start.unsqueeze(1)
+                    z_hint_seq = z_hint.unsqueeze(1) if z_hint.ndim == 4 else z_hint
+                    delta_t_seq = delta_t.unsqueeze(1) if delta_t.ndim == 1 else delta_t
+
+                # Integrate the shared latent vector field to obtain flow-predicted endpoints.
+                dynamics_outputs = self.dynamics_module(
+                    z_pred=x0_pred_seq,
+                    z_gt=x_start_seq,
+                    z_hint=z_hint_seq,
+                    delta_t=delta_t_seq,
+                    alpha=1.0,
+                    slice_idx=slice_idx,
+                )
+
+                if self.dynamics_pretrain_only:
+                    dynamics_loss, breakdown = self.dynamics_module.compute_derivative_loss(
+                        z_gt=x_start_seq,
+                        delta_t=delta_t_seq,
+                        z_hint=z_hint_seq,
+                        magnitude_weight=0.0,
+                        smoothness_weight=0.0,
+                        slice_idx=slice_idx,
+                    )
+                    loss = dynamics_loss
+                    loss_dict.update({
+                        f&quot;{prefix}/loss_simple&quot;: loss.new_zeros(()),
+                        f&quot;{prefix}/loss_vlb&quot;: loss.new_zeros(()),
+                        f&quot;{prefix}/loss&quot;: dynamics_loss,
+                        f&quot;{prefix}/dynamics_loss&quot;: dynamics_loss,
+                        f&quot;{prefix}/derivative_mse&quot;: breakdown.get(&quot;derivative_mse&quot;, 0.0),
+                        f&quot;{prefix}/du_dt_pred_mean&quot;: breakdown.get(&quot;du_dt_pred_mean&quot;, 0.0),
+                        f&quot;{prefix}/du_dt_gt_mean&quot;: breakdown.get(&quot;du_dt_gt_mean&quot;, 0.0),
+                    })
+                else:
+                    # Regress each flow-predicted endpoint toward its observed GT latent state.
+                    dynamics_loss = torch.nn.functional.l1_loss(
+                        dynamics_outputs[&quot;u_pred&quot;],
+                        dynamics_outputs[&quot;u_obs&quot;],
+                    )
+                    # L_total = L_diff + lambda_FlowCR * L_FlowCR.
+                    loss = loss + self.dynamics_loss_weight * dynamics_loss
+                    loss_dict.update({
+                        f&quot;{prefix}/dynamics_loss&quot;: dynamics_loss,
+                        f&quot;{prefix}/loss&quot;: loss,
+                    })</code></pre>
+    </div>
+  </main>
+</body>
+</html>
